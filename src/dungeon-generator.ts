@@ -5,51 +5,108 @@ export enum TileType {
   Trap = 3,
   Loot = 4,
   Wall = 5,
+  Entrance = 6,
+  Exit = 7,
 }
 
 export interface DungeonMap {
   grid: TileType[][];
   width: number;
   height: number;
+  rooms: RoomData[];
+}
+
+export interface RoomData {
+  id: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  type: TileType;
 }
 
 export class DungeonGenerator {
   /**
-   * Generates a dungeon map from a hex signature.
-   * Each character in the hex signature (0-F) determines a tile's content.
-   * @param signature The hex signature (e.g., commit hash or daily summary)
-   * @param width The width of the dungeon grid
-   * @param height The height of the dungeon grid
+   * Generates a linear dungeon with one room per signature character.
    */
-  static generateFromSignature(signature: string, width: number, height: number): DungeonMap {
-    const grid: TileType[][] = Array.from({ length: height }, () =>
-      Array.from({ length: width }, () => TileType.Wall)
+  static generateFromSignature(signature: string, totalWidth: number, totalHeight: number): DungeonMap {
+    const grid: TileType[][] = Array.from({ length: totalHeight }, () =>
+      Array.from({ length: totalWidth }, () => TileType.Wall)
     );
 
-    // Use the signature to fill the grid
-    // For simplicity, we loop through the grid and map hex chars to tiles
-    for (let y = 1; y < height - 1; y++) {
-      const row = grid[y];
-      if (!row) continue;
-      for (let x = 1; x < width - 1; x++) {
-        const sigIndex = (y * width + x) % signature.length;
-        const hexChar = signature[sigIndex];
-        if (hexChar === undefined) continue;
-        const hexVal = parseInt(hexChar, 16);
-
-        row[x] = this.mapHexToTile(hexVal);
+    const rooms: RoomData[] = [];
+    const numRooms = signature.length;
+    
+    // We want to fit all rooms in the grid. 
+    // Let's arrange them in a snake-like pattern or just a long corridor.
+    // For 32 chars, a 8x4 or similar layout of "room slots"
+    const slotSize = 5; // 5x5 slot for each room
+    const cols = Math.floor(totalWidth / slotSize);
+    
+    for (let i = 0; i < numRooms; i++) {
+      const hexChar = signature[i];
+      const hexVal = parseInt(hexChar, 16);
+      
+      const row = Math.floor(i / cols);
+      const col = (row % 2 === 0) ? (i % cols) : (cols - 1 - (i % cols)); // Snake pattern
+      
+      const rx = col * slotSize + 1;
+      const ry = row * slotSize + 1;
+      const rw = 3;
+      const rh = 3;
+      
+      const roomType = this.mapHexToTile(hexVal);
+      
+      // Carve room
+      for (let y = ry; y < ry + rh; y++) {
+        for (let x = rx; x < rx + rw; x++) {
+          grid[y][x] = TileType.Room;
+        }
+      }
+      
+      // Place specific object in center
+      grid[ry + 1][rx + 1] = roomType;
+      
+      rooms.push({
+        id: i,
+        x: rx,
+        y: ry,
+        width: rw,
+        height: rh,
+        type: roomType
+      });
+      
+      // Connect to previous room
+      if (i > 0) {
+        const prev = rooms[i - 1];
+        this.carvePath(grid, prev.x + 1, prev.y + 1, rx + 1, ry + 1);
       }
     }
 
-    return { grid, width, height };
+    return { grid, width: totalWidth, height: totalHeight, rooms };
+  }
+
+  private static carvePath(grid: TileType[][], x1: number, y1: number, x2: number, y2: number) {
+    // Horizontal then vertical
+    let cx = x1;
+    let cy = y1;
+    while (cx !== x2) {
+      grid[cy][cx] = TileType.Room;
+      cx += (x2 > x1 ? 1 : -1);
+    }
+    while (cy !== y2) {
+      grid[cy][cx] = TileType.Room;
+      cy += (y2 > y1 ? 1 : -1);
+    }
+    grid[y2][x2] = TileType.Room;
   }
 
   private static mapHexToTile(val: number): TileType {
     if (val === 0) return TileType.Trap;
-    if (val >= 1 && val <= 8) return TileType.Empty; // Mostly empty space (rooms)
-    if (val >= 9 && val <= 11) return TileType.Enemy;
+    if (val >= 1 && val <= 7) return TileType.Room; // Empty room
+    if (val >= 8 && val <= 11) return TileType.Enemy;
     if (val >= 12 && val <= 14) return TileType.Loot;
-    if (val === 15) return TileType.Room; // Special landmark
-    return TileType.Empty;
+    if (val === 15) return TileType.Exit; 
+    return TileType.Room;
   }
 }

@@ -41,8 +41,8 @@ runBtn?.addEventListener('click', async () => {
   
   try {
     const signature = 'a1b2c3d4e5f60789f2e3d4c5b6a70812' + Math.random().toString(16); // Randomize for testing
-    const width = 20;
-    const height = 10;
+    const width = 42; // 8 * 5 + 2 margin
+    const height = 22; // 4 * 5 + 2 margin
     const tileSize = 16;
 
     // Load sprites if not already loaded
@@ -56,7 +56,7 @@ runBtn?.addEventListener('click', async () => {
     // 2. Run Simulation
     const hero = new Hero(500);
     const engine = new SimulationEngine(map, hero);
-    const steps = engine.run(signature);
+    const steps = engine.run();
 
     if (status) status.innerText = 'Rendering GIF...';
 

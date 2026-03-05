@@ -33,6 +33,7 @@ export class GifGenerator {
       renderer.setSprite(TileType.Enemy, { image: spriteSheet, sx: 368, sy: 368, sw: 16, sh: 16 }); // Demon
       renderer.setSprite(TileType.Loot, { image: spriteSheet, sx: 304, sy: 288, sw: 16, sh: 16 }); // Chest
       renderer.setSprite(TileType.Trap, { image: spriteSheet, sx: 160, sy: 144, sw: 16, sh: 16 }); // Spikes
+      renderer.setSprite(TileType.Exit, { image: spriteSheet, sx: 48, sy: 336, sw: 16, sh: 16 }); // Ladder/Exit
       renderer.setSprite('Hero', { image: spriteSheet, sx: 128, sy: 100, sw: 16, sh: 28 }); // Knight (taller than 16)
     }
 

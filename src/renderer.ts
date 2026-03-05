@@ -58,6 +58,7 @@ export class Renderer {
         case TileType.Trap: color = '#5500aa'; break;
         case TileType.Loot: color = '#aaaa00'; break;
         case TileType.Room: color = '#333'; break;
+        case TileType.Exit: color = '#00aa00'; break;
       }
       this.ctx.fillStyle = color;
       this.ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
