@@ -9,22 +9,20 @@ export class GifGenerator {
     steps: SimulationStep[], 
     width: number, 
     height: number
-  ): Promise<Buffer> {
+  ): Promise<Uint8Array> {
     const encoder = new GIFEncoder(width, height);
     encoder.start();
     encoder.setRepeat(0);   // 0 for repeat, -1 for no-repeat
     encoder.setDelay(200);  // frame delay in ms
     encoder.setQuality(10); // image quality. 10 is default.
 
-    // We need a canvas to draw on. 
-    // In node we'd use 'canvas' package, in browser OffscreenCanvas.
-    // For this implementation we'll assume a canvas context is provided 
-    // or created in the environment.
-    
-    // For the sake of this logic, let's assume we are in an environment 
-    // with OffscreenCanvas (like a Chrome Service Worker).
     const canvas = new OffscreenCanvas(width, height);
-    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D | null;
+    
+    if (!ctx) {
+      throw new Error('Could not get 2D context from OffscreenCanvas');
+    }
+
     const renderer = new Renderer(ctx);
 
     for (const step of steps) {
@@ -32,12 +30,13 @@ export class GifGenerator {
       renderer.drawMap(map);
       renderer.drawHero(step.heroX, step.heroY);
       
-      // Get pixel data from canvas
       const pixels = ctx.getImageData(0, 0, width, height).data;
-      encoder.addFrame(pixels as any);
+      encoder.addFrame(pixels);
     }
 
     encoder.finish();
-    return encoder.out.getData();
+    const buffer = encoder.out.getData();
+    // Return as Uint8Array for browser-native use
+    return new Uint8Array(buffer);
   }
 }

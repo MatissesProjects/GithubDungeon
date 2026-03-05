@@ -1,11 +1,20 @@
 import { DungeonMap, TileType } from './dungeon-generator';
 import { Hero } from './hero';
 
+export type SimulationAction = 
+  | 'Start'
+  | `Moved to (${number}, ${number})`
+  | `Blocked at (${number}, ${number})`
+  | 'Fought an enemy'
+  | 'Sprung a trap'
+  | 'Found loot'
+  | 'Entered a large room';
+
 export interface SimulationStep {
   heroX: number;
   heroY: number;
   heroHp: number;
-  action: string;
+  action: SimulationAction;
 }
 
 export class SimulationEngine {
@@ -94,7 +103,7 @@ export class SimulationEngine {
     }
   }
 
-  private logStep(action: string): void {
+  private logStep(action: SimulationAction): void {
     this.steps.push({
       heroX: this.hero.x,
       heroY: this.hero.y,
