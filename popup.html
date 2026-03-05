@@ -3,14 +3,23 @@
 <head>
   <title>GitHub Dungeon Crawler</title>
   <style>
-    body { width: 300px; padding: 10px; font-family: sans-serif; }
-    h1 { font-size: 1.2rem; }
+    body { width: 350px; padding: 15px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: #eee; }
+    h1 { font-size: 1.2rem; color: #ff4444; margin-top: 0; }
+    #status { margin-bottom: 10px; font-size: 0.9rem; color: #888; }
+    #gifContainer { width: 320px; height: 160px; border: 2px solid #333; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    img { max-width: 100%; max-height: 100%; image-rendering: pixelated; }
+    button { width: 100%; padding: 10px; background: #ff4444; border: none; color: white; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    button:hover { background: #cc3333; }
+    button:disabled { background: #555; cursor: not-allowed; }
   </style>
 </head>
 <body>
   <h1>Dungeon Crawler</h1>
-  <div id="status">Simulation ready.</div>
-  <button id="runBtn">Run Daily Simulation</button>
+  <div id="status">Ready to crawl...</div>
+  <div id="gifContainer">
+    <div id="placeholder">GIF will appear here</div>
+  </div>
+  <button id="runBtn">Generate Daily Adventure</button>
   <script src="popup.js"></script>
 </body>
 </html>
