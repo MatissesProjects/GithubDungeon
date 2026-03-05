@@ -10,6 +10,23 @@ const downloadLink = document.getElementById('downloadLink') as HTMLAnchorElemen
 const actionsDiv = document.getElementById('actions') as HTMLDivElement | null;
 
 let currentGifUrl: string | null = null;
+let spriteSheet: ImageBitmap | null = null;
+
+// The popular 0x72 Dungeon Tileset v1.1
+const TILESET_URL = 'https://raw.githubusercontent.com/ryan-haskell/elm-2d/master/examples/assets/dungeon-tileset.png';
+
+async function loadSprites() {
+  if (spriteSheet) return spriteSheet;
+  try {
+    const response = await fetch(TILESET_URL);
+    const blob = await response.blob();
+    spriteSheet = await createImageBitmap(blob);
+    return spriteSheet;
+  } catch (err) {
+    console.error('Failed to load spritesheet:', err);
+    return null;
+  }
+}
 
 runBtn?.addEventListener('click', async () => {
   if (runBtn) runBtn.disabled = true;
@@ -28,7 +45,12 @@ runBtn?.addEventListener('click', async () => {
     const height = 10;
     const tileSize = 16;
 
+    // Load sprites if not already loaded
+    if (status) status.innerText = 'Loading assets...';
+    const sheet = await loadSprites();
+
     // 1. Generate Map
+    if (status) status.innerText = 'Simulating adventure...';
     const map = DungeonGenerator.generateFromSignature(signature, width, height);
     
     // 2. Run Simulation
@@ -43,7 +65,8 @@ runBtn?.addEventListener('click', async () => {
       map, 
       steps, 
       width * tileSize, 
-      height * tileSize
+      height * tileSize,
+      sheet || undefined
     );
 
     // 4. Display GIF
