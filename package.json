@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "build": "tsc",
+    "build": "tsc && npm run assets",
+    "assets": "copyfiles -u 0 manifest.json popup.html dist",
     "visualize": "ts-node src/visualize.ts"
   },
   "repository": {
@@ -21,7 +22,10 @@
   },
   "homepage": "https://github.com/MatissesProjects/GithubDungeon#readme",
   "devDependencies": {
+    "@types/chrome": "^0.1.37",
     "@types/jest": "^30.0.0",
+    "chrome-types": "^0.1.422",
+    "copyfiles": "^2.4.1",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",

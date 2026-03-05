@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub Dungeon Crawler",
+  "version": "1.0.0",
+  "description": "Transform your daily GitHub contributions into a playable dungeon crawler GIF.",
+  "permissions": ["storage", "alarms", "notifications"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
