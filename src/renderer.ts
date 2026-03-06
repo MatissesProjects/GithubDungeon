@@ -23,38 +23,40 @@ export class Renderer {
     this.theme = theme;
   }
 
-  public drawMap(map: DungeonMap): void {
+  public drawViewport(map: DungeonMap, heroX: number, heroY: number, viewWidth: number, viewHeight: number): void {
     this.setTheme(map.metadata.theme);
-    for (let y = 0; y < map.height; y++) {
-      for (let x = 0; x < map.width; x++) {
-        const tile = map.grid[y]?.[x];
-        this.drawTile(x, y, tile);
+    
+    const halfW = Math.floor(viewWidth / 2);
+    const halfH = Math.floor(viewHeight / 2);
+    
+    const startX = heroX - halfW;
+    const startY = heroY - halfH;
+
+    for (let y = 0; y < viewHeight; y++) {
+      for (let x = 0; x < viewWidth; x++) {
+        const worldX = startX + x;
+        const worldY = startY + y;
+        
+        const tile = (worldX >= 0 && worldX < map.width && worldY >= 0 && worldY < map.height)
+          ? map.grid[worldY][worldX]
+          : TileType.Wall; // Outside map is all walls
+        
+        this.drawTileAt(x, y, tile);
       }
     }
+    
+    // Draw hero at the center of the viewport
+    this.drawHeroAt(halfW, halfH);
   }
 
-  public drawHero(x: number, y: number): void {
-    const sprite = this.sprites.get('Hero');
-    if (sprite) {
-      this.ctx.drawImage(
-        sprite.image,
-        sprite.sx, sprite.sy, sprite.sw, sprite.sh,
-        x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize
-      );
-    } else {
-      this.ctx.fillStyle = '#ff0000';
-      this.ctx.fillRect(x * this.tileSize + 2, y * this.tileSize + 2, this.tileSize - 4, this.tileSize - 4);
-    }
-  }
-
-  private drawTile(x: number, y: number, tile: TileType | undefined): void {
+  private drawTileAt(viewX: number, viewY: number, tile: TileType | undefined): void {
     const sprite = tile !== undefined ? this.sprites.get(tile) : undefined;
     
     if (sprite) {
       this.ctx.drawImage(
         sprite.image,
         sprite.sx, sprite.sy, sprite.sw, sprite.sh,
-        x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize
+        viewX * this.tileSize, viewY * this.tileSize, this.tileSize, this.tileSize
       );
     } else {
       let color = '#222';
@@ -65,7 +67,7 @@ export class Renderer {
         case DungeonTheme.Underworld:
           color = tile === TileType.Wall ? '#4a235a' : '#2e1534';
           break;
-        default: // Classic
+        default:
           color = tile === TileType.Wall ? '#444' : '#222';
       }
 
@@ -76,8 +78,23 @@ export class Renderer {
       if (tile === TileType.Room && color === '#222') color = '#333';
 
       this.ctx.fillStyle = color;
-      this.ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+      this.ctx.fillRect(viewX * this.tileSize, viewY * this.tileSize, this.tileSize, this.tileSize);
     }
+  }
+
+  private drawHeroAt(viewX: number, viewY: number): void {
+    const sprite = this.sprites.get('Hero');
+    if (sprite) {
+      this.ctx.drawImage(
+        sprite.image,
+        sprite.sx, sprite.sy, sprite.sw, sprite.sh,
+        viewX * this.tileSize, viewY * this.tileSize, this.tileSize, this.tileSize
+      );
+    } else {
+      this.ctx.fillStyle = '#ff0000';
+      this.ctx.fillRect(viewX * this.tileSize + 2, viewY * this.tileSize + 2, this.tileSize - 4, this.tileSize - 4);
+    }
+  }
     
     // Grid lines for debug or when sprites are missing
     if (!sprite) {

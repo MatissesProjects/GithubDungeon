@@ -54,40 +54,46 @@ runBtn?.addEventListener('click', async () => {
           }
         });
         if (results?.[0]?.result) {
-          signature = results[0].result;
-          console.log('Found signature from page:', signature);
+          let rawSig = results[0].result as string;
+          console.log('Found raw signature from page:', rawSig);
+          // Clean up "SIG: 0x" if present
+          signature = rawSig.replace(/^SIG:\s*0x/i, '').trim();
+          console.log('Cleaned signature:', signature);
         }
       }
     } catch (tabErr) {
       console.warn('Could not scry page signature, using random seed.', tabErr);
     }
 
-    const width = 42; 
-    const height = 22; 
-    const tileSize = 16;
+    if (status) status.innerText = `Signature Found: ${signature.substring(0, 8)}...`;
 
+    const tileSize = 16;
+    const viewSize = 9; // 9x9 tiles viewport
 
     // Load sprites if not already loaded
     if (status) status.innerText = 'Loading assets...';
     const sheet = await loadSprites();
 
     // 1. Generate Map
-    if (status) status.innerText = 'Simulating adventure...';
-    const map = DungeonGenerator.generateFromSignature(signature, width, height);
+    if (status) status.innerText = 'Generating Dungeon...';
+    const map = DungeonGenerator.generateFromSignature(signature, 42, 22);
+    console.log('Dungeon generated:', map.metadata);
     
     // 2. Run Simulation
+    if (status) status.innerText = 'Simulating adventure...';
     const hero = new Hero(map.metadata.magnitude);
     const engine = new SimulationEngine(map, hero);
     const steps = engine.run();
+    console.log(`Simulation finished with ${steps.length} steps.`);
 
-    if (status) status.innerText = 'Rendering GIF...';
+    if (status) status.innerText = `Rendering ${steps.length} frames...`;
 
     // 3. Generate GIF
     const gifBuffer: Uint8Array = await GifGenerator.generate(
       map, 
       steps, 
-      width * tileSize, 
-      height * tileSize,
+      viewSize * tileSize, 
+      viewSize * tileSize,
       sheet || undefined
     );
 

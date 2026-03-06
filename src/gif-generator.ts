@@ -45,10 +45,13 @@ export class GifGenerator {
 
     try {
       let frameCount = 0;
+      // Fixed viewport size (e.g., 9x9 tiles)
+      const viewW = 9;
+      const viewH = 9;
+      
       for (const step of steps) {
         renderer.clear();
-        renderer.drawMap(map);
-        renderer.drawHero(step.heroX, step.heroY);
+        renderer.drawViewport(map, step.heroX, step.heroY, viewW, viewH);
 
         const pixels = ctx.getImageData(0, 0, width, height).data;
         encoder.addFrame(pixels);
