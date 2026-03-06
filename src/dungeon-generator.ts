@@ -50,10 +50,12 @@ export class DungeonGenerator {
       const row = Math.floor(i / cols);
       const col = (row % 2 === 0) ? (i % cols) : (cols - 1 - (i % cols)); // Snake pattern
       
-      const rx = col * slotSize + 1;
-      const ry = row * slotSize + 1;
-      const rw = 3;
-      const rh = 3;
+      const rx = col * slotSize + (hexVal % 2); // Jitter x
+      const ry = row * slotSize + (Math.floor(hexVal / 4) % 2); // Jitter y
+      
+      // Variable room sizes based on hex value
+      const rw = 2 + (hexVal % 3); // 2 to 4
+      const rh = 2 + (Math.floor(hexVal / 3) % 3); // 2 to 4
       
       const roomType = this.mapHexToTile(hexVal);
       
@@ -67,9 +69,11 @@ export class DungeonGenerator {
         }
       }
       
-      // Place specific object in center
-      if (grid[ry + 1] && rx + 1 < totalWidth) {
-        grid[ry + 1][rx + 1] = roomType;
+      // Place specific object at a random-ish spot in the room
+      const ox = rx + (hexVal % rw);
+      const oy = ry + (Math.floor(hexVal / 4) % rh);
+      if (grid[oy] && ox < totalWidth) {
+        grid[oy][ox] = roomType;
       }
       
       rooms.push({

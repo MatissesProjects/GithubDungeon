@@ -30,20 +30,42 @@ async function loadSprites() {
 
 runBtn?.addEventListener('click', async () => {
   if (runBtn) runBtn.disabled = true;
-  if (status) status.innerText = 'Simulating adventure...';
+  if (status) status.innerText = 'Scrying GitHub Pulse...';
   if (actionsDiv) actionsDiv.style.display = 'none';
-  
+
   // Revoke previous URL to prevent memory leaks
   if (currentGifUrl) {
     URL.revokeObjectURL(currentGifUrl);
     currentGifUrl = null;
   }
-  
+
   try {
-    const signature = 'a1b2c3d4e5f60789f2e3d4c5b6a70812' + Math.random().toString(16); // Randomize for testing
+    // Attempt to get signature from current tab
+    let signature = 'a1b2c3d4e5f60789f2e3d4c5b6a70812' + Math.random().toString(16);
+
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => {
+            const el = document.getElementById('gh-pulse-signature');
+            return el ? el.innerText || el.getAttribute('data-signature') : null;
+          }
+        });
+        if (results?.[0]?.result) {
+          signature = results[0].result;
+          console.log('Found signature from page:', signature);
+        }
+      }
+    } catch (tabErr) {
+      console.warn('Could not scry page signature, using random seed.', tabErr);
+    }
+
     const width = 42; 
     const height = 22; 
     const tileSize = 16;
+
 
     // Load sprites if not already loaded
     if (status) status.innerText = 'Loading assets...';
