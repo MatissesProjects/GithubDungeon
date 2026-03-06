@@ -9,6 +9,7 @@ const ctx = canvas?.getContext('2d');
 const overlay = document.getElementById('overlay') as HTMLDivElement | null;
 const overlayText = document.getElementById('overlayText') as HTMLDivElement | null;
 const retryBtn = document.getElementById('retryBtn') as HTMLButtonElement | null;
+const atkBtn = document.getElementById('atkBtn') as HTMLButtonElement | null;
 
 const hpStat = document.getElementById('hpStat') as HTMLSpanElement | null;
 const atkStat = document.getElementById('atkStat') as HTMLSpanElement | null;
@@ -51,6 +52,12 @@ function drawGame() {
 function handleInput(e: KeyboardEvent) {
   if (!hero || !currentMap || !hero.isAlive()) return;
 
+  if (e.key === ' ') {
+    e.preventDefault();
+    performAttack();
+    return;
+  }
+
   let dx = 0;
   let dy = 0;
 
@@ -76,7 +83,7 @@ function handleInput(e: KeyboardEvent) {
       dx = 1;
       break;
     default:
-      return; // Ignore other keys
+      return;
   }
 
   e.preventDefault();
@@ -84,18 +91,21 @@ function handleInput(e: KeyboardEvent) {
   const newX = hero.x + dx;
   const newY = hero.y + dy;
 
-  // Check bounds
   if (newX < 0 || newX >= currentMap.width || newY < 0 || newY >= currentMap.height) return;
 
   const targetTile = currentMap.grid[newY][newX];
 
-  // Collision with walls
   if (targetTile === TileType.Wall) return;
+  
+  if (targetTile === TileType.Enemy || targetTile === TileType.Boss) {
+    if (status) status.innerText = `An enemy blocks your path! Press Space to attack!`;
+    return;
+  }
 
   // Move
   hero.setPosition(newX, newY);
 
-  // Local Decoding: Find the hex value for the current day/room
+  // Interaction for non-combat tiles
   const slotSize = 5;
   const cols = 8;
   const col = Math.floor((newX - 1) / slotSize);
@@ -103,28 +113,14 @@ function handleInput(e: KeyboardEvent) {
   const roomIdx = row * cols + (row % 2 === 0 ? col : (cols - 1 - col));
   const hexVal = currentMap.signature[roomIdx] ? parseInt(currentMap.signature[roomIdx], 16) : 0;
 
-  // Interaction
   let message = '';
   switch (targetTile) {
-    case TileType.Enemy:
-      // Scale enemy damage based on hexVal (0-15)
-      hero.takeDamage(10 + hexVal);
-      currentMap.grid[newY][newX] = TileType.Room;
-      message = 'Fought an enemy!';
-      break;
-    case TileType.Boss:
-      // Boss is much stronger
-      hero.takeDamage(30 + hexVal * 2);
-      currentMap.grid[newY][newX] = TileType.Room;
-      message = 'DEFEATED THE BOSS!';
-      break;
     case TileType.Trap:
       hero.takeDamage(5 + Math.floor(hexVal / 2));
       currentMap.grid[newY][newX] = TileType.Room;
       message = 'Sprung a trap!';
       break;
     case TileType.Loot:
-      // Scale loot based on hexVal
       hero.heal(10 + hexVal);
       currentMap.grid[newY][newX] = TileType.Room;
       message = 'Found loot!';
@@ -138,8 +134,51 @@ function handleInput(e: KeyboardEvent) {
       break;
   }
 
-  if (message && status) {
-    status.innerText = message;
+  if (message && status) status.innerText = message;
+  updateStats();
+  drawGame();
+}
+
+function performAttack() {
+  if (!hero || !currentMap || !hero.isAlive()) return;
+
+  // Search adjacent tiles for enemies
+  const adj = [
+    {x: hero.x, y: hero.y - 1},
+    {x: hero.x, y: hero.y + 1},
+    {x: hero.x - 1, y: hero.y},
+    {x: hero.x + 1, y: hero.y}
+  ];
+
+  let hit = false;
+  for (const pos of adj) {
+    if (pos.x < 0 || pos.x >= currentMap.width || pos.y < 0 || pos.y >= currentMap.height) continue;
+    
+    const tile = currentMap.grid[pos.y][pos.x];
+    if (tile === TileType.Enemy || tile === TileType.Boss) {
+      const slotSize = 5;
+      const cols = 8;
+      const col = Math.floor((pos.x - 1) / slotSize);
+      const row = Math.floor((pos.y - 1) / slotSize);
+      const roomIdx = row * cols + (row % 2 === 0 ? col : (cols - 1 - col));
+      const hexVal = currentMap.signature[roomIdx] ? parseInt(currentMap.signature[roomIdx], 16) : 0;
+
+      if (tile === TileType.Enemy) {
+        hero.takeDamage(10 + hexVal);
+        if (status) status.innerText = `Slashed an enemy! (Received ${Math.max(1, 10 + hexVal - hero.stats.defense)} dmg)`;
+      } else {
+        hero.takeDamage(30 + hexVal * 2);
+        if (status) status.innerText = `DEFEATED THE BOSS! (Received ${Math.max(1, 30 + hexVal * 2 - hero.stats.defense)} dmg)`;
+      }
+      
+      currentMap.grid[pos.y][pos.x] = TileType.Room;
+      hit = true;
+      break;
+    }
+  }
+
+  if (!hit) {
+    if (status) status.innerText = "You swing at the air...";
   }
 
   updateStats();
@@ -227,6 +266,10 @@ async function startGame() {
 
 runBtn?.addEventListener('click', startGame);
 retryBtn?.addEventListener('click', startGame);
+atkBtn?.addEventListener('click', () => {
+  performAttack();
+  if (canvas) canvas.focus();
+});
 
 if (canvas) {
   canvas.addEventListener('keydown', handleInput);

@@ -150,18 +150,18 @@ export class DungeonGenerator {
     let cy = y1;
     while (cx !== x2) {
       if (grid[cy] && cx > 0 && cx < width - 1) {
-        grid[cy][cx] = TileType.Room;
+        if (grid[cy][cx] === TileType.Wall) grid[cy][cx] = TileType.Room;
       }
       cx += (x2 > x1 ? 1 : -1);
     }
     while (cy !== y2) {
       if (grid[cy] && cy > 0 && cy < height - 1 && cx < width - 1) {
-        grid[cy][cx] = TileType.Room;
+        if (grid[cy][cx] === TileType.Wall) grid[cy][cx] = TileType.Room;
       }
       cy += (y2 > y1 ? 1 : -1);
     }
     if (grid[y2] && y2 > 0 && y2 < height - 1 && x2 > 0 && x2 < width - 1) {
-      grid[y2][x2] = TileType.Room;
+      if (grid[y2][x2] === TileType.Wall) grid[y2][x2] = TileType.Room;
     }
   }
 
