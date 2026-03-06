@@ -84,10 +84,11 @@ export class DungeonGenerator {
       const ry = row * slotSize + (Math.floor(hexVal / 4) % 2) + 1; // Jitter y based on DNA, +1 for border
       
       // Variable room sizes based on hex value (DNA)
-      const rw = 2 + (hexVal % 3); // 2 to 4
-      const rh = 2 + (Math.floor(hexVal / 3) % 3); // 2 to 4
+      const rw = 2 + (hexVal % 2); // 2 to 3 (safer for slotSize 5)
+      const rh = 2 + (Math.floor(hexVal / 3) % 2); // 2 to 3
       
-      const roomType = this.mapHexToTile(hexVal);
+      // FORCE LAST ROOM TO BE EXIT
+      const roomType = (i === numRooms - 1) ? TileType.Exit : this.mapHexToTile(hexVal);
       
       // Carve room
       for (let y = ry; y < ry + rh; y++) {
@@ -99,10 +100,10 @@ export class DungeonGenerator {
         }
       }
       
-      // Place specific object based on the DNA strand
-      const ox = rx + (hexVal % rw);
-      const oy = ry + (Math.floor(hexVal / 4) % rh);
-      if (grid[oy] && ox < totalWidth) {
+      // Place specific object at the center of the room
+      const ox = rx + Math.floor(rw / 2);
+      const oy = ry + Math.floor(rh / 2);
+      if (grid[oy] && ox < totalWidth - 1 && oy < totalHeight - 1) {
         grid[oy][ox] = roomType;
       }
       

@@ -70,14 +70,22 @@ runBtn?.addEventListener('click', async () => {
     const tileSize = 16;
     const viewSize = 9; // 9x9 tiles viewport
 
+    // Calculate grid dimensions to fit all rooms (5x5 slots)
+    const slotSize = 5;
+    const numRooms = signature.length;
+    const cols = 8; // Keep a fixed column width for predictable snake pattern
+    const rows = Math.ceil(numRooms / cols);
+    const gridWidth = cols * slotSize + 2;
+    const gridHeight = rows * slotSize + 2;
+
     // Load sprites if not already loaded
     if (status) status.innerText = 'Loading assets...';
     const sheet = await loadSprites();
 
     // 1. Generate Map
     if (status) status.innerText = 'Generating Dungeon...';
-    const map = DungeonGenerator.generateFromSignature(signature, 42, 22);
-    console.log('Dungeon generated:', map.metadata);
+    const map = DungeonGenerator.generateFromSignature(signature, gridWidth, gridHeight);
+    console.log(`Dungeon generated (${gridWidth}x${gridHeight}):`, map.metadata);
     
     // 2. Run Simulation
     if (status) status.innerText = 'Simulating adventure...';

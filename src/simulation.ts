@@ -40,24 +40,19 @@ export class SimulationEngine {
       if (!this.hero.isAlive()) break;
 
       const room = this.map.rooms[i];
-      // Target is the spot where the special object was placed (if any), otherwise center
+      // Target is the center of the room
       const targetX = room.x + Math.floor(room.width / 2);
       const targetY = room.y + Math.floor(room.height / 2);
 
       // Move to room
       this.moveTo(targetX, targetY, `Reached Room ${i}`);
       
-      // Interact with room content at multiple spots in the room
-      for (let ry = room.y; ry < room.y + room.height; ry++) {
-        for (let rx = room.x; rx < room.x + room.width; rx++) {
-          this.interactWithTile(rx, ry);
-        }
-      }
+      // Interact only with the specific tile we are standing on (the center)
+      this.interactWithTile(targetX, targetY);
       
-      if (room.type === TileType.Exit) {
+      if (room.type === TileType.Exit || this.map.grid[targetY][targetX] === TileType.Exit) {
           this.logStep('Found the exit!');
-          // We still continue if there are more rooms, or break if this is the final intended exit
-          if (i === this.map.rooms.length - 1) break;
+          break; // Stop exactly when we find the exit
       }
     }
 
