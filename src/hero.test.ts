@@ -1,11 +1,11 @@
 import { Hero } from './hero';
 
 describe('Hero', () => {
-  test('should initialize stats based on commits', () => {
+  test('should initialize stats based on magnitude', () => {
     const hero = new Hero(100);
-    expect(hero.stats.maxHp).toBe(110);
-    expect(hero.stats.attack).toBe(11);
-    expect(hero.stats.defense).toBe(5);
+    expect(hero.stats.maxHp).toBe(150);
+    expect(hero.stats.attack).toBe(20);
+    expect(hero.stats.defense).toBe(10);
   });
 
   test('should take damage correctly', () => {

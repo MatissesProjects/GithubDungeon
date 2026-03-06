@@ -10,11 +10,11 @@ export class Hero {
   public x: number = 0;
   public y: number = 0;
 
-  constructor(totalCommits: number) {
-    // Stats derived from total commits
-    const baseHp = 100 + Math.floor(totalCommits / 10);
-    const baseAttack = 10 + Math.floor(totalCommits / 100);
-    const baseDefense = 5 + Math.floor(totalCommits / 200);
+  constructor(magnitude: number) {
+    // Stats derived from signature magnitude
+    const baseHp = 100 + Math.floor(magnitude / 2);
+    const baseAttack = 10 + Math.floor(magnitude / 10);
+    const baseDefense = 5 + Math.floor(magnitude / 20);
 
     this.stats = {
       maxHp: baseHp,

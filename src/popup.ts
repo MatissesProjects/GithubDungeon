@@ -76,7 +76,7 @@ runBtn?.addEventListener('click', async () => {
     const map = DungeonGenerator.generateFromSignature(signature, width, height);
     
     // 2. Run Simulation
-    const hero = new Hero(500);
+    const hero = new Hero(map.metadata.magnitude);
     const engine = new SimulationEngine(map, hero);
     const steps = engine.run();
 

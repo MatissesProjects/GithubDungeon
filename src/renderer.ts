@@ -1,4 +1,4 @@
-import { DungeonMap, TileType } from './dungeon-generator';
+import { DungeonMap, TileType, DungeonTheme } from './dungeon-generator';
 
 export interface SpriteData {
   image: ImageBitmap | HTMLImageElement | OffscreenCanvas;
@@ -11,6 +11,7 @@ export interface SpriteData {
 export class Renderer {
   private tileSize: number = 16;
   private sprites: Map<TileType | 'Hero', SpriteData> = new Map();
+  private theme: DungeonTheme = DungeonTheme.Classic;
 
   constructor(private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) {}
 
@@ -18,7 +19,12 @@ export class Renderer {
     this.sprites.set(type, data);
   }
 
+  public setTheme(theme: DungeonTheme): void {
+    this.theme = theme;
+  }
+
   public drawMap(map: DungeonMap): void {
+    this.setTheme(map.metadata.theme);
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         const tile = map.grid[y]?.[x];
@@ -52,14 +58,23 @@ export class Renderer {
       );
     } else {
       let color = '#222';
-      switch (tile) {
-        case TileType.Wall: color = '#444'; break;
-        case TileType.Enemy: color = '#aa0000'; break;
-        case TileType.Trap: color = '#5500aa'; break;
-        case TileType.Loot: color = '#aaaa00'; break;
-        case TileType.Room: color = '#333'; break;
-        case TileType.Exit: color = '#00aa00'; break;
+      switch (this.theme) {
+        case DungeonTheme.Crypt:
+          color = tile === TileType.Wall ? '#2c3e50' : '#1a252f';
+          break;
+        case DungeonTheme.Underworld:
+          color = tile === TileType.Wall ? '#4a235a' : '#2e1534';
+          break;
+        default: // Classic
+          color = tile === TileType.Wall ? '#444' : '#222';
       }
+
+      if (tile === TileType.Enemy) color = '#aa0000';
+      if (tile === TileType.Trap) color = '#5500aa';
+      if (tile === TileType.Loot) color = '#aaaa00';
+      if (tile === TileType.Exit) color = '#00aa00';
+      if (tile === TileType.Room && color === '#222') color = '#333';
+
       this.ctx.fillStyle = color;
       this.ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
     }
