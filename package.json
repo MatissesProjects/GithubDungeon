@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "build": "tsc && esbuild src/popup.ts src/background.ts --bundle --outdir=dist --minify --target=chrome90 --alias:stream=stream-browserify --alias:events=events --alias:buffer=buffer && npm run assets",
+    "build": "tsc && esbuild src/popup.ts src/background.ts --bundle --outdir=dist --target=chrome90 --alias:stream=stream-browserify --alias:events=events --alias:buffer=buffer --alias:process=process/browser --alias:assert=assert --alias:util=util --define:global=globalThis --inject:src/shims.ts && npm run assets",
     "assets": "copyfiles -u 0 manifest.json popup.html dist",
     "visualize": "ts-node src/visualize.ts"
   },
@@ -24,7 +24,8 @@
   "devDependencies": {
     "@types/chrome": "^0.1.37",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
+    "assert": "^2.1.0",
     "buffer": "^6.0.3",
     "chrome-types": "^0.1.422",
     "copyfiles": "^2.4.1",
@@ -32,9 +33,14 @@
     "events": "^3.3.0",
     "gif-encoder-2": "^1.0.5",
     "jest": "^30.2.0",
+    "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "util": "^0.12.5"
+  },
+  "dependencies": {
+    "gif-encoder": "^0.7.2"
   }
 }
