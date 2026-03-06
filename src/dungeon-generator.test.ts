@@ -2,8 +2,8 @@ import { DungeonGenerator, TileType } from './dungeon-generator';
 
 describe('DungeonGenerator', () => {
   const signature = 'a1b2c3d4e5f60789';
-  const width = 10;
-  const height = 10;
+  const width = 50;
+  const height = 50;
 
   test('should generate a map with correct dimensions', () => {
     const map = DungeonGenerator.generateFromSignature(signature, width, height);

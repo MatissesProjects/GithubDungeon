@@ -41,8 +41,8 @@ runBtn?.addEventListener('click', async () => {
   
   try {
     const signature = 'a1b2c3d4e5f60789f2e3d4c5b6a70812' + Math.random().toString(16); // Randomize for testing
-    const width = 42; // 8 * 5 + 2 margin
-    const height = 22; // 4 * 5 + 2 margin
+    const width = 42; 
+    const height = 22; 
     const tileSize = 16;
 
     // Load sprites if not already loaded
@@ -70,15 +70,11 @@ runBtn?.addEventListener('click', async () => {
     );
 
     // 4. Display GIF
-    const blob = new Blob([gifBuffer as unknown as BlobPart], { type: 'image/gif' });
+    const blob = new Blob([gifBuffer as any], { type: 'image/gif' });
     currentGifUrl = URL.createObjectURL(blob);
     
     if (gifContainer) {
-      gifContainer.innerHTML = `<img src="${currentGifUrl}" alt="Dungeon Adventure" />`;
-    }
-
-    if (downloadLink) {
-      downloadLink.href = currentGifUrl;
+      gifContainer.innerHTML = `<img src="${currentGifUrl}" alt="Dungeon Adventure" style="max-width: 100%; height: auto;" />`;
     }
 
     if (actionsDiv) {

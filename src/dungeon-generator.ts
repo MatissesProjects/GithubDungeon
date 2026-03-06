@@ -59,13 +59,18 @@ export class DungeonGenerator {
       
       // Carve room
       for (let y = ry; y < ry + rh; y++) {
+        if (!grid[y]) continue;
         for (let x = rx; x < rx + rw; x++) {
-          grid[y][x] = TileType.Room;
+          if (x < totalWidth) {
+            grid[y][x] = TileType.Room;
+          }
         }
       }
       
       // Place specific object in center
-      grid[ry + 1][rx + 1] = roomType;
+      if (grid[ry + 1] && rx + 1 < totalWidth) {
+        grid[ry + 1][rx + 1] = roomType;
+      }
       
       rooms.push({
         id: i,
@@ -91,14 +96,20 @@ export class DungeonGenerator {
     let cx = x1;
     let cy = y1;
     while (cx !== x2) {
-      grid[cy][cx] = TileType.Room;
+      if (grid[cy] && grid[cy][cx] !== undefined) {
+        grid[cy][cx] = TileType.Room;
+      }
       cx += (x2 > x1 ? 1 : -1);
     }
     while (cy !== y2) {
-      grid[cy][cx] = TileType.Room;
+      if (grid[cy] && grid[cy][cx] !== undefined) {
+        grid[cy][cx] = TileType.Room;
+      }
       cy += (y2 > y1 ? 1 : -1);
     }
-    grid[y2][x2] = TileType.Room;
+    if (grid[y2] && grid[y2][x2] !== undefined) {
+      grid[y2][x2] = TileType.Room;
+    }
   }
 
   private static mapHexToTile(val: number): TileType {

@@ -61,6 +61,7 @@ export class SimulationEngine {
   private moveTo(tx: number, ty: number, finalAction: SimulationAction) {
     let cx = this.hero.x;
     let cy = this.hero.y;
+    let moveCount = 0;
 
     // Simple A* would be better but linear path is fine for this corridor-like dungeon
     while (cx !== tx || cy !== ty) {
@@ -70,8 +71,12 @@ export class SimulationEngine {
       else if (cy !== ty) cy += (ty > cy ? 1 : -1);
 
       this.hero.setPosition(cx, cy);
-      // We don't log every micro-step to keep GIF size reasonable
-      // But we could log every N steps
+      
+      // Log every 2nd step to keep GIF size reasonable but fluid
+      if (moveCount % 2 === 0) {
+        this.logStep(`Moved to (${cx}, ${cy})`);
+      }
+      moveCount++;
     }
     this.logStep(finalAction);
   }
