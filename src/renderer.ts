@@ -95,13 +95,6 @@ export class Renderer {
       this.ctx.fillRect(viewX * this.tileSize + 2, viewY * this.tileSize + 2, this.tileSize - 4, this.tileSize - 4);
     }
   }
-    
-    // Grid lines for debug or when sprites are missing
-    if (!sprite) {
-      this.ctx.strokeStyle = '#111';
-      this.ctx.strokeRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
-    }
-  }
 
   public clear(): void {
     const canvas = this.ctx.canvas;
