@@ -7,6 +7,7 @@ export enum TileType {
   Wall = 5,
   Entrance = 6,
   Exit = 7,
+  Boss = 8,
 }
 
 export enum DungeonTheme {
@@ -28,6 +29,7 @@ export interface DungeonMap {
   height: number;
   rooms: RoomData[];
   metadata: DungeonMetadata;
+  signature: string; // Store for local decoding
 }
 
 export interface RoomData {
@@ -37,6 +39,7 @@ export interface RoomData {
   width: number;
   height: number;
   type: TileType;
+  hexVal: number;
 }
 
 export class DungeonGenerator {
@@ -68,7 +71,6 @@ export class DungeonGenerator {
     const rooms: RoomData[] = [];
     const numRooms = signature.length;
     
-    // Use the signature length as the "DNA" for layout
     const slotSize = 5;
     const cols = Math.floor(totalWidth / slotSize);
     
@@ -80,15 +82,15 @@ export class DungeonGenerator {
       const row = Math.floor(i / cols);
       const col = (row % 2 === 0) ? (i % cols) : (cols - 1 - (i % cols)); // Snake pattern
       
-      const rx = col * slotSize + (hexVal % 2) + 1; // Jitter x based on DNA, +1 for border
-      const ry = row * slotSize + (Math.floor(hexVal / 4) % 2) + 1; // Jitter y based on DNA, +1 for border
+      const rx = col * slotSize + (hexVal % 2) + 1;
+      const ry = row * slotSize + (Math.floor(hexVal / 4) % 2) + 1;
       
-      // Variable room sizes based on hex value (DNA)
-      const rw = 2 + (hexVal % 2); // 2 to 3 (safer for slotSize 5)
-      const rh = 2 + (Math.floor(hexVal / 3) % 2); // 2 to 3
+      // BOSS ROOMS: If hexVal is 14 (E) and it's not the final exit, make it a larger boss room
+      const isBoss = hexVal === 14 && i < numRooms - 1;
+      const rw = isBoss ? 4 : (2 + (hexVal % 2));
+      const rh = isBoss ? 4 : (2 + (Math.floor(hexVal / 3) % 2));
       
-      // FORCE LAST ROOM TO BE EXIT
-      const roomType = (i === numRooms - 1) ? TileType.Exit : this.mapHexToTile(hexVal);
+      const roomType = (i === numRooms - 1) ? TileType.Exit : (isBoss ? TileType.Boss : this.mapHexToTile(hexVal));
       
       // Carve room
       for (let y = ry; y < ry + rh; y++) {
@@ -102,9 +104,14 @@ export class DungeonGenerator {
       
       // Place specific object at the center of the room
       const ox = rx + Math.floor(rw / 2);
-      const oy = ry + Math.floor(rh / 2);
+      const oy = ry + (Math.floor(rh / 2));
       if (grid[oy] && ox < totalWidth - 1 && oy < totalHeight - 1) {
         grid[oy][ox] = roomType;
+      }
+
+      // EXTRA: High values (>= 12) add extra smaller loot or traps in corners
+      if (hexVal >= 12 && !isBoss && i < numRooms - 1) {
+        if (grid[ry][rx] === TileType.Room) grid[ry][rx] = (hexVal % 2 === 0) ? TileType.Loot : TileType.Trap;
       }
       
       rooms.push({
@@ -113,7 +120,8 @@ export class DungeonGenerator {
         y: ry,
         width: rw,
         height: rh,
-        type: roomType
+        type: roomType,
+        hexVal: hexVal
       });
       
       // Connect to previous room
@@ -123,7 +131,7 @@ export class DungeonGenerator {
       }
     }
 
-    return { grid, width: totalWidth, height: totalHeight, rooms, metadata };
+    return { grid, width: totalWidth, height: totalHeight, rooms, metadata, signature };
   }
 
   private static pickTheme(hash: number): DungeonTheme {

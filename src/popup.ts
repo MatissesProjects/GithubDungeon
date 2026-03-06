@@ -95,22 +95,38 @@ function handleInput(e: KeyboardEvent) {
   // Move
   hero.setPosition(newX, newY);
 
+  // Local Decoding: Find the hex value for the current day/room
+  const slotSize = 5;
+  const cols = 8;
+  const col = Math.floor((newX - 1) / slotSize);
+  const row = Math.floor((newY - 1) / slotSize);
+  const roomIdx = row * cols + (row % 2 === 0 ? col : (cols - 1 - col));
+  const hexVal = currentMap.signature[roomIdx] ? parseInt(currentMap.signature[roomIdx], 16) : 0;
+
   // Interaction
   let message = '';
   switch (targetTile) {
     case TileType.Enemy:
-      hero.takeDamage(15);
-      currentMap.grid[newY][newX] = TileType.Room; // Remove enemy
+      // Scale enemy damage based on hexVal (0-15)
+      hero.takeDamage(10 + hexVal);
+      currentMap.grid[newY][newX] = TileType.Room;
       message = 'Fought an enemy!';
       break;
+    case TileType.Boss:
+      // Boss is much stronger
+      hero.takeDamage(30 + hexVal * 2);
+      currentMap.grid[newY][newX] = TileType.Room;
+      message = 'DEFEATED THE BOSS!';
+      break;
     case TileType.Trap:
-      hero.takeDamage(10);
-      currentMap.grid[newY][newX] = TileType.Room; // Remove trap
+      hero.takeDamage(5 + Math.floor(hexVal / 2));
+      currentMap.grid[newY][newX] = TileType.Room;
       message = 'Sprung a trap!';
       break;
     case TileType.Loot:
-      hero.heal(20);
-      currentMap.grid[newY][newX] = TileType.Room; // Remove loot
+      // Scale loot based on hexVal
+      hero.heal(10 + hexVal);
+      currentMap.grid[newY][newX] = TileType.Room;
       message = 'Found loot!';
       break;
     case TileType.Exit:
@@ -189,6 +205,7 @@ async function startGame() {
         renderer.setSprite(TileType.Room, { image: sheet, sx: 16, sy: 64, sw: 16, sh: 16 });
         renderer.setSprite(TileType.Wall, { image: sheet, sx: 16, sy: 16, sw: 16, sh: 16 });
         renderer.setSprite(TileType.Enemy, { image: sheet, sx: 368, sy: 368, sw: 16, sh: 16 });
+        renderer.setSprite(TileType.Boss, { image: sheet, sx: 368, sy: 320, sw: 16, sh: 16 }); // Big Demon
         renderer.setSprite(TileType.Loot, { image: sheet, sx: 304, sy: 288, sw: 16, sh: 16 });
         renderer.setSprite(TileType.Trap, { image: sheet, sx: 160, sy: 144, sw: 16, sh: 16 });
         renderer.setSprite(TileType.Exit, { image: sheet, sx: 48, sy: 336, sw: 16, sh: 16 });

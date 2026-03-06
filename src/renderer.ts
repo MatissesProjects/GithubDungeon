@@ -72,6 +72,7 @@ export class Renderer {
       }
 
       if (tile === TileType.Enemy) color = '#aa0000';
+      if (tile === TileType.Boss) color = '#ff8800';
       if (tile === TileType.Trap) color = '#5500aa';
       if (tile === TileType.Loot) color = '#aaaa00';
       if (tile === TileType.Exit) color = '#00aa00';
