@@ -31,8 +31,14 @@
       <button id="retryBtn" style="width: 80%;">Retry</button>
     </div>
   </div>
-  <button id="runBtn">Generate Daily Adventure</button>
-  <button id="atkBtn" style="background: #aa0000; margin-top: 5px;">Attack (Space)</button>
+  <div id="controls" style="display: flex; gap: 5px;">
+    <button id="runBtn" style="flex: 2;">Generate Daily Adventure</button>
+    <button id="atkBtn" style="flex: 1; background: #aa0000; margin-top: 10px;">Attack (Space)</button>
+    <button id="jumpBtn" style="flex: 1; background: #0000aa; margin-top: 10px;">Jump (Shift)</button>
+  </div>
+  <div style="font-size: 0.7rem; color: #666; margin-top: 5px; text-align: center;">
+    WASD to move | Space to Attack | Shift+Move to Jump over traps
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>

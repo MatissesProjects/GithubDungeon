@@ -85,13 +85,18 @@ export class DungeonGenerator {
       const rx = col * slotSize + (hexVal % 2) + 1;
       const ry = row * slotSize + (Math.floor(hexVal / 4) % 2) + 1;
       
-      // BOSS ROOMS: If hexVal is 14 (E) and it's not the final exit, make it a larger boss room
-      const isBoss = hexVal === 14 && i < numRooms - 1;
+      // BOSS ROOM: Penultimate slot
+      const isBoss = i === numRooms - 2;
+      // EXIT ROOM: Last slot
+      const isExit = i === numRooms - 1;
+
       const rw = isBoss ? 4 : (2 + (hexVal % 2));
       const rh = isBoss ? 4 : (2 + (Math.floor(hexVal / 3) % 2));
-      
-      const roomType = (i === numRooms - 1) ? TileType.Exit : (isBoss ? TileType.Boss : this.mapHexToTile(hexVal));
-      
+
+      let roomType = this.mapHexToTile(hexVal);
+      if (isBoss) roomType = TileType.Boss;
+      if (isExit) roomType = TileType.Exit;
+
       // Carve room
       for (let y = ry; y < ry + rh; y++) {
         if (!grid[y] || y >= totalHeight - 1) continue;
@@ -101,16 +106,17 @@ export class DungeonGenerator {
           }
         }
       }
-      
+
       // Place specific object at the center of the room
       const ox = rx + Math.floor(rw / 2);
-      const oy = ry + (Math.floor(rh / 2));
+      const oy = ry + Math.floor(rh / 2);
       if (grid[oy] && ox < totalWidth - 1 && oy < totalHeight - 1) {
         grid[oy][ox] = roomType;
       }
 
-      // EXTRA: High values (>= 12) add extra smaller loot or traps in corners
-      if (hexVal >= 12 && !isBoss && i < numRooms - 1) {
+      // EXTRA: High values add extra smaller loot or traps in corners (but not in exit/boss rooms)
+      if (hexVal >= 12 && !isBoss && !isExit) {
+
         if (grid[ry][rx] === TileType.Room) grid[ry][rx] = (hexVal % 2 === 0) ? TileType.Loot : TileType.Trap;
       }
       

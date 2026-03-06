@@ -10,6 +10,7 @@ const overlay = document.getElementById('overlay') as HTMLDivElement | null;
 const overlayText = document.getElementById('overlayText') as HTMLDivElement | null;
 const retryBtn = document.getElementById('retryBtn') as HTMLButtonElement | null;
 const atkBtn = document.getElementById('atkBtn') as HTMLButtonElement | null;
+const jumpBtn = document.getElementById('jumpBtn') as HTMLButtonElement | null;
 
 const hpStat = document.getElementById('hpStat') as HTMLSpanElement | null;
 const atkStat = document.getElementById('atkStat') as HTMLSpanElement | null;
@@ -19,6 +20,9 @@ let spriteSheet: ImageBitmap | null = null;
 let currentMap: DungeonMap | null = null;
 let hero: Hero | null = null;
 let renderer: Renderer | null = null;
+let enemyHP: Map<string, number> = new Map();
+let bossDefeated = false;
+let isJumpMode = false;
 
 const TILESET_URL = 'https://raw.githubusercontent.com/ryan-haskell/elm-2d/master/examples/assets/dungeon-tileset.png';
 
@@ -82,12 +86,17 @@ function handleInput(e: KeyboardEvent) {
     case 'D':
       dx = 1;
       break;
+    case 'Shift':
+      isJumpMode = true;
+      if (status) status.innerText = "JUMP MODE: ACTIVE";
+      return;
     default:
       return;
   }
 
   e.preventDefault();
-
+  
+  const jump = e.shiftKey || isJumpMode;
   const newX = hero.x + dx;
   const newY = hero.y + dy;
 
@@ -102,39 +111,83 @@ function handleInput(e: KeyboardEvent) {
     return;
   }
 
-  // Move
-  hero.setPosition(newX, newY);
-
-  // Interaction for non-combat tiles
-  const slotSize = 5;
-  const cols = 8;
-  const col = Math.floor((newX - 1) / slotSize);
-  const row = Math.floor((newY - 1) / slotSize);
-  const roomIdx = row * cols + (row % 2 === 0 ? col : (cols - 1 - col));
-  const hexVal = currentMap.signature[roomIdx] ? parseInt(currentMap.signature[roomIdx], 16) : 0;
-
-  let message = '';
-  switch (targetTile) {
-    case TileType.Trap:
-      hero.takeDamage(5 + Math.floor(hexVal / 2));
-      currentMap.grid[newY][newX] = TileType.Room;
-      message = 'Sprung a trap!';
-      break;
-    case TileType.Loot:
-      hero.heal(10 + hexVal);
-      currentMap.grid[newY][newX] = TileType.Room;
-      message = 'Found loot!';
-      break;
-    case TileType.Exit:
-      if (overlay && overlayText) {
-        overlayText.innerText = 'Dungeon Cleared!';
-        overlay.style.display = 'flex';
-      }
-      message = 'Found the exit!';
-      break;
+  if (targetTile === TileType.Exit && !bossDefeated) {
+    if (status) status.innerText = `The way is sealed! You must defeat the Boss first!`;
+    return;
   }
 
-  if (message && status) status.innerText = message;
+  // JUMP MECHANIC
+  if (jump) {
+    if (targetTile === TileType.Trap) {
+      if (Math.random() > 0.3) {
+        if (status) status.innerText = "You gracefully jump over the trap!";
+        hero.setPosition(newX, newY);
+        // Move one more step if possible to actually pass it
+        const nextX = newX + dx;
+        const nextY = newY + dy;
+        if (nextX >= 0 && nextX < currentMap.width && nextY >= 0 && nextY < currentMap.height) {
+            const nextTile = currentMap.grid[nextY][nextX];
+            if (nextTile !== TileType.Wall && nextTile !== TileType.Enemy && nextTile !== TileType.Boss) {
+                hero.setPosition(nextX, nextY);
+            }
+        }
+      } else {
+        if (status) status.innerText = "You tripped mid-jump!";
+        hero.takeDamage(10); 
+        hero.setPosition(newX, newY);
+        currentMap.grid[newY][newX] = TileType.Room;
+      }
+    } else {
+      // Normal jump move
+      const nextX = newX + dx;
+      const nextY = newY + dy;
+      if (nextX >= 0 && nextX < currentMap.width && nextY >= 0 && nextY < currentMap.height) {
+          const nextTile = currentMap.grid[nextY][nextX];
+          if (nextTile !== TileType.Wall && nextTile !== TileType.Enemy && nextTile !== TileType.Boss) {
+              hero.setPosition(nextX, nextY);
+              if (status) status.innerText = "Heads up!";
+          } else {
+              hero.setPosition(newX, newY);
+          }
+      } else {
+          hero.setPosition(newX, newY);
+      }
+    }
+    isJumpMode = false;
+  } else {
+    // Normal Move
+    hero.setPosition(newX, newY);
+
+    let message = '';
+    switch (targetTile) {
+      case TileType.Trap:
+        const slotSize = 5;
+        const cols = 8;
+        const col = Math.floor((newX - 1) / slotSize);
+        const row = Math.floor((newY - 1) / slotSize);
+        const roomIdx = row * cols + (row % 2 === 0 ? col : (cols - 1 - col));
+        const hexVal = currentMap.signature[roomIdx] ? parseInt(currentMap.signature[roomIdx], 16) : 0;
+        
+        hero.takeDamage(10 + Math.floor(hexVal / 2));
+        currentMap.grid[newY][newX] = TileType.Room;
+        message = 'Sprung a trap!';
+        break;
+      case TileType.Loot:
+        hero.heal(20);
+        currentMap.grid[newY][newX] = TileType.Room;
+        message = 'Found loot!';
+        break;
+      case TileType.Exit:
+        if (overlay && overlayText) {
+          overlayText.innerText = 'Dungeon Cleared!';
+          overlay.style.display = 'flex';
+        }
+        message = 'Found the exit!';
+        break;
+    }
+    if (message && status) status.innerText = message;
+  }
+
   updateStats();
   drawGame();
 }
@@ -142,7 +195,6 @@ function handleInput(e: KeyboardEvent) {
 function performAttack() {
   if (!hero || !currentMap || !hero.isAlive()) return;
 
-  // Search adjacent tiles for enemies
   const adj = [
     {x: hero.x, y: hero.y - 1},
     {x: hero.x, y: hero.y + 1},
@@ -150,34 +202,64 @@ function performAttack() {
     {x: hero.x + 1, y: hero.y}
   ];
 
-  let hit = false;
+  let hitTarget = false;
   for (const pos of adj) {
     if (pos.x < 0 || pos.x >= currentMap.width || pos.y < 0 || pos.y >= currentMap.height) continue;
     
     const tile = currentMap.grid[pos.y][pos.x];
     if (tile === TileType.Enemy || tile === TileType.Boss) {
-      const slotSize = 5;
-      const cols = 8;
-      const col = Math.floor((pos.x - 1) / slotSize);
-      const row = Math.floor((pos.y - 1) / slotSize);
-      const roomIdx = row * cols + (row % 2 === 0 ? col : (cols - 1 - col));
-      const hexVal = currentMap.signature[roomIdx] ? parseInt(currentMap.signature[roomIdx], 16) : 0;
-
-      if (tile === TileType.Enemy) {
-        hero.takeDamage(10 + hexVal);
-        if (status) status.innerText = `Slashed an enemy! (Received ${Math.max(1, 10 + hexVal - hero.stats.defense)} dmg)`;
+      const key = `${pos.x},${pos.y}`;
+      let hp = enemyHP.get(key) || 0;
+      
+      // HERO ATTACK
+      if (Math.random() < 0.9) { // 90% hit chance
+        const damage = Math.floor(hero.stats.attack * (0.7 + Math.random() * 0.6));
+        hp -= damage;
+        enemyHP.set(key, hp);
+        
+        if (hp <= 0) {
+          if (tile === TileType.Boss) {
+            bossDefeated = true;
+            if (status) status.innerText = `YOU DEFEATED THE BOSS! The exit is open!`;
+          } else {
+            if (status) status.innerText = `You killed the enemy!`;
+          }
+          currentMap.grid[pos.y][pos.x] = TileType.Room;
+          enemyHP.delete(key);
+        } else {
+          if (status) status.innerText = `Hit for ${damage}! Enemy HP: ${hp}`;
+          
+          // ENEMY COUNTER ATTACK (Only if survived)
+          if (Math.random() < 0.6) { // 60% counter chance
+            const slotSize = 5;
+            const cols = 8;
+            const col = Math.floor((pos.x - 1) / slotSize);
+            const row = Math.floor((pos.y - 1) / slotSize);
+            const roomIdx = row * cols + (row % 2 === 0 ? col : (cols - 1 - col));
+            const hexVal = currentMap.signature[roomIdx] ? parseInt(currentMap.signature[roomIdx], 16) : 0;
+            
+            const enemyDmg = tile === TileType.Boss ? (20 + hexVal) : (10 + hexVal);
+            hero.takeDamage(enemyDmg);
+            if (status) status.innerText += ` | Enemy hit back!`;
+          } else {
+            if (status) status.innerText += ` | Enemy missed!`;
+          }
+        }
       } else {
-        hero.takeDamage(30 + hexVal * 2);
-        if (status) status.innerText = `DEFEATED THE BOSS! (Received ${Math.max(1, 30 + hexVal * 2 - hero.stats.defense)} dmg)`;
+        if (status) status.innerText = `You missed!`;
+        // Enemy still counters if missed
+        if (Math.random() < 0.4) {
+            hero.takeDamage(10);
+            if (status) status.innerText += ` | Enemy hit you!`;
+        }
       }
       
-      currentMap.grid[pos.y][pos.x] = TileType.Room;
-      hit = true;
+      hitTarget = true;
       break;
     }
   }
 
-  if (!hit) {
+  if (!hitTarget) {
     if (status) status.innerText = "You swing at the air...";
   }
 
@@ -197,6 +279,10 @@ async function startGame() {
   if (status) status.innerText = 'Scrying GitHub Pulse...';
   if (overlay) overlay.style.display = 'none';
   if (canvas) canvas.focus();
+  
+  enemyHP.clear();
+  bossDefeated = false;
+  isJumpMode = false;
 
   try {
     let signature = 'a1b2c3d4e5f60789f2e3d4c5b6a70812' + Math.random().toString(16);
@@ -233,8 +319,27 @@ async function startGame() {
     if (status) status.innerText = 'Generating Dungeon...';
     currentMap = DungeonGenerator.generateFromSignature(signature, gridWidth, gridHeight);
     
+    // Initialize Enemy HP based on signature DNA
+    currentMap.rooms.forEach(room => {
+        // Main room object
+        const ox = room.x + Math.floor(room.width / 2);
+        const oy = room.y + Math.floor(room.height / 2);
+        if (room.type === TileType.Enemy) {
+            enemyHP.set(`${ox},${oy}`, 20 + room.hexVal * 3);
+        } else if (room.type === TileType.Boss) {
+            enemyHP.set(`${ox},${oy}`, 100 + currentMap!.metadata.magnitude);
+        }
+        
+        // Extra corner objects if any
+        if (room.hexVal >= 12 && room.id < signature.length - 2) {
+            const cornerTile = currentMap!.grid[room.y][room.x];
+            if (cornerTile === TileType.Enemy) {
+                enemyHP.set(`${room.x},${room.y}`, 15 + room.hexVal);
+            }
+        }
+    });
+
     hero = new Hero(currentMap.metadata.magnitude);
-    // Start in the first room
     const firstRoom = currentMap.rooms[0];
     hero.setPosition(firstRoom.x + 1, firstRoom.y + 1);
 
@@ -244,7 +349,7 @@ async function startGame() {
         renderer.setSprite(TileType.Room, { image: sheet, sx: 16, sy: 64, sw: 16, sh: 16 });
         renderer.setSprite(TileType.Wall, { image: sheet, sx: 16, sy: 16, sw: 16, sh: 16 });
         renderer.setSprite(TileType.Enemy, { image: sheet, sx: 368, sy: 368, sw: 16, sh: 16 });
-        renderer.setSprite(TileType.Boss, { image: sheet, sx: 368, sy: 320, sw: 16, sh: 16 }); // Big Demon
+        renderer.setSprite(TileType.Boss, { image: sheet, sx: 368, sy: 320, sw: 16, sh: 16 });
         renderer.setSprite(TileType.Loot, { image: sheet, sx: 304, sy: 288, sw: 16, sh: 16 });
         renderer.setSprite(TileType.Trap, { image: sheet, sx: 160, sy: 144, sw: 16, sh: 16 });
         renderer.setSprite(TileType.Exit, { image: sheet, sx: 48, sy: 336, sw: 16, sh: 16 });
@@ -255,7 +360,7 @@ async function startGame() {
     updateStats();
     drawGame();
 
-    if (status) status.innerText = 'Use Arrow Keys or WASD to move!';
+    if (status) status.innerText = 'Use WASD to move, Space to Attack, Shift+Move to Jump!';
   } catch (err) {
     console.error(err);
     if (status) status.innerText = 'Error starting game.';
@@ -270,9 +375,16 @@ atkBtn?.addEventListener('click', () => {
   performAttack();
   if (canvas) canvas.focus();
 });
+jumpBtn?.addEventListener('click', () => {
+  isJumpMode = !isJumpMode;
+  if (status) status.innerText = isJumpMode ? "JUMP MODE: ACTIVE" : "JUMP MODE: INACTIVE";
+  if (canvas) canvas.focus();
+});
 
 if (canvas) {
   canvas.addEventListener('keydown', handleInput);
-  // Ensure canvas can receive keyboard events immediately
+  canvas.addEventListener('keyup', (e) => {
+      if (e.key === 'Shift') isJumpMode = false;
+  });
   canvas.addEventListener('click', () => canvas.focus());
 }
